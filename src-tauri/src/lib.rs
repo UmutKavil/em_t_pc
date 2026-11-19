@@ -1,4 +1,5 @@
 use std::{
+    fs,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::Mutex,
@@ -7,12 +8,19 @@ use std::{
 };
 
 use serde::Serialize;
-use tauri::{command, AppHandle, Emitter, State};
+use rusqlite::{params, Connection};
+use sha2::{Digest, Sha256};
+use tauri::{command, AppHandle, Emitter, Manager, State};
 
+const ADMIN_USERNAME: &str = "admin";
 const ADMIN_PASSWORD: &str = "admin123";
 
 pub struct TerminalState {
     cwd: Mutex<PathBuf>,
+}
+
+pub struct DatabaseState {
+    connection: Mutex<Connection>,
 }
 
 #[derive(Clone, Serialize)]
@@ -45,12 +53,42 @@ fn find_flags(text: &str) -> Vec<String> {
 }
 
 #[command]
-fn authenticate_admin(password: String) -> Result<String, String> {
-    if password == ADMIN_PASSWORD {
-        Ok("admin".to_string())
-    } else {
-        Err("Şifre hatalı. Lütfen tekrar deneyin.".to_string())
+fn authenticate_admin(
+    username: String,
+    password: String,
+    database: State<'_, DatabaseState>,
+) -> Result<String, String> {
+    if username.trim().is_empty() || password.is_empty() {
+        return Err("Kullanıcı adı ve şifre gereklidir.".to_string());
     }
+
+    let password_hash = sha256_hex(password.as_bytes());
+    let connection = database.connection.lock()
+        .map_err(|_| "Veritabanı kilitlenemedi.".to_string())?;
+
+    let stored_hash: String = connection
+        .query_row(
+            "SELECT password_hash FROM users WHERE username = ?1",
+            params![username.trim()],
+            |row| row.get(0),
+        )
+        .map_err(|_| "Kullanıcı adı veya şifre hatalı.".to_string())?;
+
+    if stored_hash == password_hash {
+        Ok(username.trim().to_string())
+    } else {
+        Err("Kullanıcı adı veya şifre hatalı.".to_string())
+    }
+}
+
+fn sha256_hex(input: &[u8]) -> String {
+    let digest = Sha256::digest(input);
+    let mut result = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        use std::fmt::Write;
+        let _ = write!(result, "{byte:02x}");
+    }
+    result
 }
 
 #[command]
@@ -135,7 +173,7 @@ fn execute_terminal_command(
                 if !stderr.is_empty() {
                     stderr.extend_from_slice(b"\n");
                 }
-                stderr.extend_from_slice(b"Komut 30 saniye sonra zaman aşımına uğradı.");
+                stderr.extend_from_slice("Komut 30 saniye sonra zaman aşımına uğradı.".as_bytes());
                 timed_output.stderr = stderr;
                 break timed_output;
             }
@@ -174,6 +212,42 @@ pub fn run() {
         .unwrap_or_else(std::env::temp_dir);
 
     tauri::Builder::default()
+        .setup(|app| {
+            let data_dir = app.path().app_data_dir()
+                .map_err(|error| std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Uygulama veri dizini alınamadı: {error}")
+                ))?;
+            fs::create_dir_all(&data_dir)?;
+
+            let database_path = data_dir.join("em_t_pc.db");
+            let connection = Connection::open(database_path)
+                .map_err(|error| std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("SQLite veritabanı açılamadı: {error}")
+                ))?;
+
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    role TEXT NOT NULL
+                )",
+                [],
+            )?;
+
+            connection.execute(
+                "INSERT OR IGNORE INTO users (username, password_hash, role)
+                 VALUES (?1, ?2, 'admin')",
+                params![ADMIN_USERNAME, sha256_hex(ADMIN_PASSWORD.as_bytes())],
+            )?;
+
+            app.manage(DatabaseState {
+                connection: Mutex::new(connection),
+            });
+            Ok(())
+        })
         .manage(TerminalState {
             cwd: Mutex::new(initial_cwd),
         })

@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import LevelTest from "./components/LevelTest";
 
 const panels = {
   admin: {
@@ -127,11 +128,13 @@ function RealTerminal({ onClose, title = "Mac Terminal" }) {
 function App() {
   const [panel, setPanel] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
   const [flagResult, setFlagResult] = useState("");
+  const [showLevelTest, setShowLevelTest] = useState(false);
 
   useEffect(() => {
     let unlisten;
@@ -151,19 +154,31 @@ function App() {
     setError("");
     try {
       await invoke("open_student_panel");
-      setPanel("student");
+      setShowLevelTest(true);
     } catch (commandError) {
       setError(commandError instanceof Error ? commandError.message : String(commandError));
     }
   };
+
+  if (showLevelTest) {
+    return (
+      <LevelTest
+        onFinish={() => {
+          setShowLevelTest(false);
+          setPanel("student");
+        }}
+      />
+    );
+  }
 
   const loginAsAdmin = async (event) => {
     event.preventDefault();
     setError("");
     setIsLoading(true);
     try {
-      await invoke("authenticate_admin", { password });
+      await invoke("authenticate_admin", { username, password });
       setPanel("admin");
+      setUsername("");
       setPassword("");
       setShowPassword(false);
     } catch (commandError) {
@@ -304,7 +319,19 @@ function App() {
 
         {showPassword && (
           <form className="password-form" onSubmit={loginAsAdmin}>
-            <label htmlFor="admin-password">Admin şifresi</label>
+            <label htmlFor="admin-username">Kullanıcı adı</label>
+            <div className="password-row admin-credentials">
+              <input
+                autoFocus
+                id="admin-username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="Admin kullanıcı adı"
+              />
+            </div>
+            <label className="password-label" htmlFor="admin-password">Admin şifresi</label>
             <div className="password-row">
               <input
                 autoFocus

@@ -54,6 +54,8 @@ h2 { font-size: 14px; margin: 0 0 5px; }
 .password-row { display: flex; gap: 10px; }
 .password-row input { background: #0c1323; border: 1px solid #344360; border-radius: 8px; color: #fff; flex: 1; min-width: 0; outline: none; padding: 11px 13px; }
 .password-row input:focus { border-color: #667fff; }
+.password-label { margin-top: 12px; }
+.admin-credentials { margin-bottom: 12px; }
 .error-message { color: #ff8291; font-size: 12px; margin: 14px 0 0; }
 .security-note { color: #5d6980; font-family: "DM Mono", monospace; font-size: 10px; margin: 40px 0 0; text-align: center; }
 .security-note span { color: #51d8c5; margin-right: 7px; }
@@ -102,6 +104,29 @@ h2 { font-size: 14px; margin: 0 0 5px; }
 .flag-success strong { color: #64e5a6; font-size: 15px; letter-spacing: .04em; }
 .flag-success p { color: #dcece4; font-size: 12px; margin: 4px 0 7px; }
 .flag-success code { background: rgba(4, 23, 15, .55); border-radius: 5px; color: #a7f3ca; font-size: 11px; padding: 5px 7px; }
+.level-test-shell { align-items: center; background: #090d18; display: flex; justify-content: center; min-height: 100vh; padding: 32px 20px; position: relative; }
+.level-test-card { background: rgba(15, 22, 38, .92); border: 1px solid #222d45; border-radius: 24px; box-shadow: 0 24px 80px rgba(0, 0, 0, .32); max-width: 720px; padding: 38px; width: 100%; }
+.level-test-header { align-items: flex-start; display: flex; justify-content: space-between; }
+.level-test-header h1 { font-size: 28px; }
+.level-test-header > span { color: #61dac7; font-family: "DM Mono", monospace; font-size: 12px; }
+.level-test-progress { background: #202a40; border-radius: 999px; height: 5px; margin: 24px 0 30px; overflow: hidden; }
+.level-test-progress div { background: linear-gradient(90deg, #516dff, #61dac7); height: 100%; transition: width .25s ease; }
+.level-test-question { font-size: 21px; line-height: 1.4; margin: 0 0 22px; }
+.level-test-options { display: grid; gap: 10px; }
+.level-test-option { align-items: center; background: #121b2e; border: 1px solid #293650; border-radius: 12px; color: #dce5f8; display: flex; gap: 12px; padding: 13px; text-align: left; }
+.level-test-option > span { align-items: center; background: #252e52; border-radius: 7px; color: #9aa7ff; display: flex; flex: 0 0 34px; height: 34px; justify-content: center; }
+.level-test-option strong { font-size: 13px; }
+.level-test-option:hover, .level-test-option.selected { border-color: #6178ef; background: #172238; }
+.level-test-option.selected > span { background: #516dff; color: #fff; }
+.level-test-next { align-items: center; background: #516dff; border: 1px solid #6680ff; border-radius: 9px; color: #fff; display: flex; font-size: 13px; font-weight: 700; justify-content: space-between; margin: 24px 0 0 auto; min-width: 180px; padding: 12px 15px; }
+.level-test-next:disabled { cursor: not-allowed; opacity: .42; }
+.level-test-result { text-align: center; }
+.level-test-result h1 { font-size: 38px; }
+.level-test-result h2 { color: #61dac7; font-size: 32px; margin: 16px 0 8px; }
+.level-result-icon { align-items: center; background: #1d8059; border-radius: 50%; color: #fff; display: flex; font-size: 30px; height: 72px; justify-content: center; margin: 28px auto 20px; width: 72px; }
+.level-result-description { color: #9aa6bc; margin-bottom: 26px; }
+.level-result-description strong { color: #61dac7; }
+.level-test-result .level-test-next { margin: 0 auto; }
 
 @media (max-width: 600px) {
   .login-card { padding: 30px 22px 24px; }
