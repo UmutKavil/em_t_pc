@@ -18,6 +18,17 @@
         "minWidth": 360,
         "minHeight": 600,
         "resizable": true
+      },
+      {
+        "label": "terminal",
+        "title": "EM T PC Terminal",
+        "url": "terminal.html",
+        "width": 900,
+        "height": 600,
+        "minWidth": 700,
+        "minHeight": 420,
+        "resizable": true,
+        "visible": false
       }
     ],
     "security": {
@@ -27,6 +38,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/icon.png"]
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.icns"
+    ]
   }
 }

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Terminal } from "@xterm/xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import "@xterm/xterm/css/xterm.css";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import LevelTest from "./components/LevelTest";
 import Leaderboard from "./components/Leaderboard";
+import MissionPanel from "./components/MissionPanel";
+import logo from "./assets/logo.png";
 
 const panels = {
   admin: {
@@ -24,108 +24,6 @@ const panels = {
   },
 };
 
-function RealTerminal({ onClose, title = "Mac Terminal" }) {
-  const terminalRef = useRef(null);
-  const terminalInstance = useRef(null);
-  const inputBuffer = useRef("");
-  const running = useRef(false);
-
-  useEffect(() => {
-    if (!terminalRef.current) return;
-
-    const terminal = new Terminal({
-      cursorBlink: true,
-      convertEol: true,
-      fontFamily: '"DM Mono", Menlo, Monaco, monospace',
-      fontSize: 13,
-      theme: {
-        background: "#090d18",
-        foreground: "#dce5f8",
-        cursor: "#61dac7",
-        selectionBackground: "#34466a",
-      },
-    });
-    const fitAddon = new FitAddon();
-    terminal.loadAddon(fitAddon);
-    terminal.open(terminalRef.current);
-    fitAddon.fit();
-
-    const resizeObserver = new ResizeObserver(() => fitAddon.fit());
-    resizeObserver.observe(terminalRef.current);
-    terminalInstance.current = terminal;
-
-    terminal.writeln(`\x1b[1;36mEM T PC ${title}\x1b[0m`);
-    terminal.writeln("Gerçek macOS komutlarını çalıştırır. Çıkmak için terminal penceresini kapatın.");
-    terminal.writeln("");
-    terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~\x1b[0m $ ");
-
-    const disposable = terminal.onData(async (data) => {
-      if (running.current) return;
-
-      if (data === "\r") {
-        const command = inputBuffer.current;
-        inputBuffer.current = "";
-        terminal.write("\r\n");
-
-        if (!command.trim()) {
-          terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~\x1b[0m $ ");
-          return;
-        }
-
-        running.current = true;
-        terminal.write("\x1b[90mÇalıştırılıyor...\x1b[0m\r\n");
-        try {
-          const result = await invoke("execute_terminal_command", { command });
-          if (result.output) terminal.write(result.output.replace(/\n/g, "\r\n"));
-          if (result.output && !result.output.endsWith("\n")) terminal.write("\r\n");
-          const cwdName = result.cwd.split("/").filter(Boolean).pop() || "/";
-          terminal.write(`\x1b[1;32m➜\x1b[0m \x1b[1;34m~/${cwdName}\x1b[0m $ `);
-        } catch (commandError) {
-          terminal.write(`\x1b[1;31mHata:\x1b[0m ${String(commandError)}\r\n`);
-          terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~\x1b[0m $ ");
-        } finally {
-          running.current = false;
-        }
-      } else if (data === "\u007f") {
-        if (inputBuffer.current.length > 0) {
-          inputBuffer.current = inputBuffer.current.slice(0, -1);
-          terminal.write("\b \b");
-        }
-      } else if (data === "\u0003") {
-        inputBuffer.current = "";
-        terminal.write("^C\r\n\x1b[1;32m➜\x1b[0m \x1b[1;34m~\x1b[0m $ ");
-      } else if (!data.startsWith("\u001b")) {
-        inputBuffer.current += data;
-        terminal.write(data);
-      }
-    });
-
-    terminal.focus();
-    return () => {
-      disposable.dispose();
-      resizeObserver.disconnect();
-      terminal.dispose();
-    };
-  }, []);
-
-  return (
-    <div className="terminal-overlay" role="dialog" aria-modal="true" aria-label="Mac terminali">
-      <div className="terminal-window">
-        <header className="terminal-header">
-          <div className="terminal-title">
-            <span className="terminal-dot red" />
-            <span className="terminal-dot yellow" />
-            <span className="terminal-dot green" />
-            <span>macOS — EM T PC {title}</span>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Terminali kapat">×</button>
-        </header>
-        <div className="terminal-body" ref={terminalRef} />
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const [panel, setPanel] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -133,16 +31,19 @@ function App() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showTerminal, setShowTerminal] = useState(false);
   const [flagResult, setFlagResult] = useState("");
   const [showLevelTest, setShowLevelTest] = useState(false);
   const [studentScore, setStudentScore] = useState(() => {
     const savedScore = Number(localStorage.getItem("studentScore"));
     return Number.isFinite(savedScore) ? savedScore : 0;
   });
+  const [targetInfo, setTargetInfo] = useState(null);
+  const [targetLoading, setTargetLoading] = useState(false);
+  const [completedMissions, setCompletedMissions] = useState([]);
 
   useEffect(() => {
-    let unlisten;
+    let unlistenFlag;
+    let unlistenTask;
 
     listen("flag-found", (event) => {
       const flag = event.payload.flag;
@@ -157,18 +58,30 @@ function App() {
 
       if (!foundFlags.includes(flag)) {
         localStorage.setItem("foundFlags", JSON.stringify([...foundFlags, flag]));
-        setStudentScore((currentScore) => {
-          const nextScore = currentScore + 100;
-          localStorage.setItem("studentScore", String(nextScore));
-          return nextScore;
-        });
       }
     }).then((stopListening) => {
-      unlisten = stopListening;
+      unlistenFlag = stopListening;
+    });
+
+    listen("task-completed", (event) => {
+      const payload = event.payload;
+      setCompletedMissions((missions) =>
+        missions.includes(payload.mission_id)
+          ? missions
+          : [...missions, payload.mission_id],
+      );
+      setStudentScore((currentScore) => {
+        const nextScore = currentScore + payload.points;
+        localStorage.setItem("studentScore", String(nextScore));
+        return nextScore;
+      });
+    }).then((stopListening) => {
+      unlistenTask = stopListening;
     });
 
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenFlag) unlistenFlag();
+      if (unlistenTask) unlistenTask();
     };
   }, []);
 
@@ -180,6 +93,44 @@ function App() {
     } catch (commandError) {
       setError(commandError instanceof Error ? commandError.message : String(commandError));
     }
+  };
+
+  const startTargetLaboratory = async () => {
+    setTargetLoading(true);
+    setError("");
+    try {
+      const result = await invoke("start_vulnerable_target");
+      setTargetInfo(result);
+    } catch (commandError) {
+      setError(commandError instanceof Error ? commandError.message : String(commandError));
+    } finally {
+      setTargetLoading(false);
+    }
+  };
+
+  const openTerminalWindow = async (title) => {
+    const existingWindow = WebviewWindow.getByLabel("terminal");
+    if (existingWindow) {
+      await existingWindow.setTitle(`EM T PC — ${title}`);
+      await existingWindow.show();
+      await existingWindow.setFocus();
+      return;
+    }
+
+    const terminalWindow = new WebviewWindow("terminal", {
+      url: `/terminal.html?title=${encodeURIComponent(title)}`,
+      title: `EM T PC — ${title}`,
+      width: 900,
+      height: 600,
+      minWidth: 700,
+      minHeight: 420,
+      resizable: true,
+      decorations: true,
+    });
+
+    terminalWindow.once("tauri://created", () => {
+      terminalWindow.setFocus();
+    });
   };
 
   if (showLevelTest) {
@@ -232,38 +183,47 @@ function App() {
           </div>
           {panel === "student" && (
             <div className="student-workspace">
-              <div className="student-task-list">
-                <div className="student-task-heading">
-                  <div>
-                    <p className="eyebrow">Görev Listesi</p>
-                    <h2>Aktif görevler</h2>
-                  </div>
-                  <span className="task-count">1 aktif</span>
-                </div>
-                <article className={`student-task ${flagResult ? "completed" : ""}`}>
-                  <div className="task-status">{flagResult ? "✓" : "01"}</div>
-                  <div>
-                    <h3>Görev 1: Sisteme sız ve bayrağı bul</h3>
-                    <p>
-                      Terminalde kendini keşfet ve <code>FLAG&#123;...&#125;</code> formatında gizli bayrağı ara.
-                    </p>
-                  </div>
-                </article>
-              </div>
+              <MissionPanel
+                completedMissions={completedMissions}
+                targetInfo={targetInfo}
+              />
               <Leaderboard score={studentScore} />
             </div>
           )}
           {panel === "admin" && (
-            <button className="terminal-launch-button" type="button" onClick={() => setShowTerminal(true)}>
-              <span className="terminal-launch-icon">›_</span>
-              <span>
-                <strong>Gerçek Terminali Aç</strong>
-                <small>macOS komutlarını çalıştır</small>
-              </span>
-            </button>
+            <>
+              <button className="terminal-launch-button" type="button" onClick={() => openTerminalWindow("Admin Terminal")}>
+                <span className="terminal-launch-icon">›_</span>
+                <span>
+                  <strong>Gerçek Terminali Aç</strong>
+                  <small>macOS komutlarını çalıştır</small>
+                </span>
+              </button>
+              <button className="terminal-launch-button" type="button" disabled={targetLoading} onClick={startTargetLaboratory}>
+                <span className="terminal-launch-icon">⬡</span>
+                <span>
+                  <strong>{targetLoading ? "Laboratuvar Başlatılıyor..." : "Hedef Laboratuvarı Başlat"}</strong>
+                  <small>DVWA zafiyetli hedefini Docker'da başlat</small>
+                </span>
+              </button>
+            </>
+          )}
+          {panel === "admin" && targetInfo && (
+            <div className="target-info-card">
+              <p className="eyebrow">Laboratuvar Hazır</p>
+              <h2>{targetInfo.name}</h2>
+              <div>
+                <span>Container IP</span>
+                <strong>{targetInfo.container_ip}</strong>
+              </div>
+              <div>
+                <span>Web adresi</span>
+                <strong>{targetInfo.host_url}</strong>
+              </div>
+            </div>
           )}
           {panel === "student" && (
-            <button className="terminal-launch-button student-terminal-launch" type="button" onClick={() => setShowTerminal(true)}>
+            <button className="terminal-launch-button student-terminal-launch" type="button" onClick={() => openTerminalWindow("Öğrenci Terminali")}>
               <span className="terminal-launch-icon">›_</span>
               <span>
                 <strong>Görev Terminalini Aç</strong>
@@ -275,12 +235,6 @@ function App() {
             ← Giriş ekranına dön
           </button>
         </section>
-        {showTerminal && (
-          <RealTerminal
-            title={panel === "student" ? "Öğrenci Terminali" : "Mac Terminal"}
-            onClose={() => setShowTerminal(false)}
-          />
-        )}
         {flagResult && (
           <div className="flag-success" role="alert" aria-live="assertive">
             <button type="button" onClick={() => setFlagResult("")} aria-label="Bildirimleri kapat">×</button>
@@ -302,7 +256,7 @@ function App() {
       <div className="ambient ambient-right" />
       <section className="login-card">
         <div className="brand-row">
-          <div className="brand-mark">ET</div>
+          <img className="login-logo" src={logo} alt="Fesli Profil logosu" />
           <div>
             <strong>EM T PC</strong>
             <span>SİBER GÜVENLİK EĞİTİM MERKEZİ</span>

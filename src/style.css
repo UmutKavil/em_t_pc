@@ -26,13 +26,14 @@ button { cursor: pointer; }
 .ambient-left { background: #3150ff; left: -280px; top: -180px; }
 .ambient-right { background: #00d9bb; bottom: -300px; right: -210px; }
 .login-card, .panel-page { max-width: 780px; position: relative; width: 100%; z-index: 1; }
-.login-card { background: rgba(15, 22, 38, .82); border: 1px solid #222d45; border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.32); padding: 44px 52px 30px; }
+.login-card { background: rgba(15, 22, 38, .82); border: 1px solid #222d45; border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.32); padding: 28px 52px 24px; }
 .brand-row { align-items: center; display: flex; gap: 12px; }
 .brand-row strong { display: block; font-size: 15px; letter-spacing: .16em; }
 .brand-row span { color: #74809b; display: block; font-family: "DM Mono", monospace; font-size: 9px; letter-spacing: .1em; margin-top: 3px; }
 .brand-mark { align-items: center; background: #4e6bff; border-radius: 11px; color: white; display: flex; font-family: "DM Mono", monospace; font-size: 14px; font-weight: 500; height: 42px; justify-content: center; width: 42px; }
 .brand-mark.small { margin: 0 auto 34px; }
-.login-copy { margin: 76px 0 42px; }
+.login-logo { border-radius: 50%; height: 72px; object-fit: cover; width: 72px; }
+.login-copy { margin: 42px 0 28px; }
 .eyebrow { color: #54dcca; font-family: "DM Mono", monospace; font-size: 11px; letter-spacing: .13em; margin: 0 0 15px; text-transform: uppercase; }
 h1 { font-size: clamp(36px, 6vw, 56px); letter-spacing: -.055em; line-height: 1.08; margin: 0; }
 .login-copy h1 em { color: #788cff; font-style: normal; }
@@ -127,6 +128,28 @@ h2 { font-size: 14px; margin: 0 0 5px; }
 .level-result-description { color: #9aa6bc; margin-bottom: 26px; }
 .level-result-description strong { color: #61dac7; }
 .level-test-result .level-test-next { margin: 0 auto; }
+.target-info-card { background: rgba(18, 27, 46, .78); border: 1px solid #39a977; border-radius: 12px; margin: 0 auto 24px; max-width: 650px; padding: 16px; text-align: left; }
+.target-info-card h2 { font-size: 14px; margin: 0 0 12px; }
+.target-info-card div { display: flex; justify-content: space-between; padding: 7px 0; }
+.target-info-card div span { color: #78849c; font-size: 11px; }
+.target-info-card div strong { color: #61dac7; font-family: "DM Mono", monospace; font-size: 11px; }
+.mission-panel { background: rgba(18, 27, 46, .78); border: 1px solid #293650; border-radius: 14px; margin: 0; padding: 18px; text-align: left; }
+.mission-heading { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 14px; }
+.mission-heading .eyebrow { margin-bottom: 5px; }
+.mission-heading h2 { font-size: 15px; margin: 0; }
+.target-address { text-align: right; }
+.target-address span, .target-address strong { display: block; }
+.target-address span { color: #78849c; font-size: 9px; }
+.target-address strong { color: #61dac7; font-size: 10px; margin-top: 4px; }
+.mission-list { display: grid; gap: 8px; }
+.mission-card { align-items: flex-start; border: 1px solid #303d58; border-radius: 11px; display: grid; gap: 10px; grid-template-columns: 38px 1fr auto; padding: 12px; }
+.mission-card.completed { border-color: #39a977; background: rgba(32, 125, 82, .12); }
+.mission-number { align-items: center; background: #252e52; border-radius: 8px; color: #96a5ff; display: flex; height: 38px; justify-content: center; }
+.mission-card.completed .mission-number { background: #1d8059; color: #fff; }
+.mission-content h3 { font-size: 12px; margin: 1px 0 5px; }
+.mission-content p { color: #8390a9; font-size: 10px; margin: 0; }
+.mission-hint { background: #0c1323; border-radius: 6px; color: #61dac7; display: block; font-size: 9px; margin-top: 8px; padding: 7px; }
+.hint-button { background: transparent; border: 1px solid #405175; border-radius: 7px; color: #d3dcf2; font-size: 9px; padding: 7px 8px; white-space: nowrap; }
 .student-workspace { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) 260px; margin: 30px auto 22px; max-width: 760px; text-align: left; }
 .student-workspace .student-task-list { margin: 0; }
 .leaderboard-card { background: rgba(18, 27, 46, .78); border: 1px solid #293650; border-radius: 14px; padding: 18px 14px 12px; }
@@ -148,8 +171,9 @@ h2 { font-size: 14px; margin: 0 0 5px; }
 .leaderboard-list .current-player { background: rgba(81, 109, 255, .10); border-radius: 8px; }
 
 @media (max-width: 600px) {
-  .login-card { padding: 30px 22px 24px; }
-  .login-copy { margin: 58px 0 32px; }
+  .login-card { padding: 22px 22px 20px; }
+  .login-logo { height: 58px; width: 58px; }
+  .login-copy { margin: 28px 0 22px; }
   .option-content { align-items: flex-start; flex-direction: column; }
   .option-content button { width: 100%; }
   .action-grid { grid-template-columns: 1fr; }

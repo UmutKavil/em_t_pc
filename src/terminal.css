@@ -1,0 +1,24 @@
+:root {
+  background: #05070b;
+  color: #dce5f8;
+  font-family: "DM Mono", Menlo, Monaco, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#terminal-root,
+.standalone-terminal {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.standalone-terminal {
+  background: #05070b;
+  padding: 10px;
+}
