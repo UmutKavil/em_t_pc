@@ -5,6 +5,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import LevelTest from "./components/LevelTest";
+import Leaderboard from "./components/Leaderboard";
 
 const panels = {
   admin: {
@@ -135,12 +136,33 @@ function App() {
   const [showTerminal, setShowTerminal] = useState(false);
   const [flagResult, setFlagResult] = useState("");
   const [showLevelTest, setShowLevelTest] = useState(false);
+  const [studentScore, setStudentScore] = useState(() => {
+    const savedScore = Number(localStorage.getItem("studentScore"));
+    return Number.isFinite(savedScore) ? savedScore : 0;
+  });
 
   useEffect(() => {
     let unlisten;
 
     listen("flag-found", (event) => {
-      setFlagResult(event.payload.flag);
+      const flag = event.payload.flag;
+      setFlagResult(flag);
+
+      let foundFlags = [];
+      try {
+        foundFlags = JSON.parse(localStorage.getItem("foundFlags") || "[]");
+      } catch {
+        foundFlags = [];
+      }
+
+      if (!foundFlags.includes(flag)) {
+        localStorage.setItem("foundFlags", JSON.stringify([...foundFlags, flag]));
+        setStudentScore((currentScore) => {
+          const nextScore = currentScore + 100;
+          localStorage.setItem("studentScore", String(nextScore));
+          return nextScore;
+        });
+      }
     }).then((stopListening) => {
       unlisten = stopListening;
     });
@@ -209,23 +231,26 @@ function App() {
             ))}
           </div>
           {panel === "student" && (
-            <div className="student-task-list">
-              <div className="student-task-heading">
-                <div>
-                  <p className="eyebrow">Görev Listesi</p>
-                  <h2>Aktif görevler</h2>
+            <div className="student-workspace">
+              <div className="student-task-list">
+                <div className="student-task-heading">
+                  <div>
+                    <p className="eyebrow">Görev Listesi</p>
+                    <h2>Aktif görevler</h2>
+                  </div>
+                  <span className="task-count">1 aktif</span>
                 </div>
-                <span className="task-count">1 aktif</span>
+                <article className={`student-task ${flagResult ? "completed" : ""}`}>
+                  <div className="task-status">{flagResult ? "✓" : "01"}</div>
+                  <div>
+                    <h3>Görev 1: Sisteme sız ve bayrağı bul</h3>
+                    <p>
+                      Terminalde kendini keşfet ve <code>FLAG&#123;...&#125;</code> formatında gizli bayrağı ara.
+                    </p>
+                  </div>
+                </article>
               </div>
-              <article className={`student-task ${flagResult ? "completed" : ""}`}>
-                <div className="task-status">{flagResult ? "✓" : "01"}</div>
-                <div>
-                  <h3>Görev 1: Sisteme sız ve bayrağı bul</h3>
-                  <p>
-                    Terminalde kendini keşfet ve <code>FLAG&#123;...&#125;</code> formatında gizli bayrağı ara.
-                  </p>
-                </div>
-              </article>
+              <Leaderboard score={studentScore} />
             </div>
           )}
           {panel === "admin" && (

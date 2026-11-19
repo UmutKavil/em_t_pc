@@ -127,6 +127,25 @@ h2 { font-size: 14px; margin: 0 0 5px; }
 .level-result-description { color: #9aa6bc; margin-bottom: 26px; }
 .level-result-description strong { color: #61dac7; }
 .level-test-result .level-test-next { margin: 0 auto; }
+.student-workspace { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) 260px; margin: 30px auto 22px; max-width: 760px; text-align: left; }
+.student-workspace .student-task-list { margin: 0; }
+.leaderboard-card { background: rgba(18, 27, 46, .78); border: 1px solid #293650; border-radius: 14px; padding: 18px 14px 12px; }
+.leaderboard-heading { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 12px; }
+.leaderboard-heading .eyebrow { margin-bottom: 5px; }
+.leaderboard-heading h2 { font-size: 14px; margin: 0; }
+.leaderboard-heading > span { color: #78849c; font-size: 9px; margin-top: 3px; }
+.leaderboard-list { list-style: none; margin: 0; padding: 0; }
+.leaderboard-list li { align-items: center; border-bottom: 1px solid #293650; display: grid; gap: 8px; grid-template-columns: 30px 1fr auto; padding: 9px 4px; }
+.leaderboard-list li:last-child { border-bottom: 0; }
+.leaderboard-rank { align-items: center; border-radius: 7px; background: #252e52; color: #9aa7ff; display: flex; font-family: "DM Mono", monospace; font-size: 10px; height: 28px; justify-content: center; width: 28px; }
+.rank-1 { background: #7a6429; color: #ffe29a; }
+.rank-2 { background: #445168; color: #dbe5f8; }
+.rank-3 { background: #68452f; color: #efb98a; }
+.leaderboard-player strong, .leaderboard-player small { display: block; }
+.leaderboard-player strong { font-size: 11px; }
+.leaderboard-player small { color: #78849c; font-size: 9px; margin-top: 2px; }
+.leaderboard-list li > b { color: #61dac7; font-family: "DM Mono", monospace; font-size: 11px; }
+.leaderboard-list .current-player { background: rgba(81, 109, 255, .10); border-radius: 8px; }
 
 @media (max-width: 600px) {
   .login-card { padding: 30px 22px 24px; }
@@ -135,4 +154,5 @@ h2 { font-size: 14px; margin: 0 0 5px; }
   .option-content button { width: 100%; }
   .action-grid { grid-template-columns: 1fr; }
   .password-row { align-items: stretch; flex-direction: column; }
+  .student-workspace { grid-template-columns: 1fr; }
 }
